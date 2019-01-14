@@ -4,6 +4,7 @@ const FILENAME = 'input.txt';
 const EOS = '\n';
 
 const add = curry(math.add);
+const dotMultiply = curry(math.dotMultiply);
 
 function initialize([vocabSize, hiddenSize]) {
   const w = math.multiply(math.random([hiddenSize, vocabSize + hiddenSize]), 0.01);
@@ -22,9 +23,23 @@ function oneHotEncode(sequence, vocabSize, charToIndex) {
   })
 }
 
-function stepForward(oneHotChar, oneHotY, [vocabSize, hiddenSize], [w, why, bh, by]) {
+function computeLoss(scores, yOneHot) {
+  const exp = math.exp(scores);
+  const sum = math.sum(exp);
+  const probs = math.divide(exp, sum);
+
+  const loss = - compose(
+    math.sum,
+    dotMultiply(math.reshape(yOneHot, [scores.size()[0], 1])),
+    math.log,
+  )(probs);
+
+  return loss;
+}
+
+function stepForward(charOneHot, yOneHot, [vocabSize, hiddenSize], [w, why, bh, by]) {
   hPrev = math.zeros(1, hiddenSize);
-  const xh = math.concat(oneHotChar, hPrev);
+  const xh = math.concat(charOneHot, hPrev);
 
   const h = compose(
     math.tanh,
@@ -37,7 +52,9 @@ function stepForward(oneHotChar, oneHotY, [vocabSize, hiddenSize], [w, why, bh, 
     math.multiply,
   )(why, h);
 
-  return [h, scores];
+  const loss = computeLoss(scores, yOneHot);
+
+  return [h, loss];
 }
 
 async function rnn(hiddenSize) {
@@ -45,9 +62,10 @@ async function rnn(hiddenSize) {
   const sizes = [vocabulary.length, hiddenSize];
   const weights = initialize(sizes);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
+  const y = inputs.map(seq => seq.map(char => charToIndex[char]));
 
-  const [h, scores] = stepForward(sequences[0][0], sequences[0][1], sizes, weights);
-  console.log(h, scores);
+  const [h, loss] = stepForward(sequences[0][0], sequences[0][1], sizes, weights);
+  console.log(h, loss);
   //sequences.forEach(seq => forwardPass(seq, sizes, weights))
 }
 
