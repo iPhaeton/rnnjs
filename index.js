@@ -1,7 +1,9 @@
 const math = require('mathjs')
-const {readText} = require('./utils');
+const {readText, curry, compose} = require('./utils');
 const FILENAME = 'input.txt';
 const EOS = '\n';
+
+const add = curry(math.add);
 
 function initialize([vocabSize, hiddenSize]) {
   const w = math.multiply(math.random([hiddenSize, vocabSize + hiddenSize]), 0.01);
@@ -24,11 +26,16 @@ function stepForward(oneHotChar, oneHotY, [vocabSize, hiddenSize], [w, why, bh, 
   hPrev = math.zeros(1, hiddenSize);
   const xh = math.concat(oneHotChar, hPrev);
 
-  let h = math.multiply(w, math.reshape(xh, [123,1]));
-  h = math.add(h, bh);
-  h = math.tanh(h);
-  let scores = math.multiply(why, h);
-  scores = math.add(scores, by);
+  const h = compose(
+    math.tanh,
+    add(bh),
+    math.multiply,
+  )(w, math.reshape(xh, [123, 1]));
+
+  const scores = compose(
+    add(by),
+    math.multiply,
+  )(why, h);
 
   return [h, scores];
 }
@@ -40,7 +47,7 @@ async function rnn(hiddenSize) {
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
 
   const [h, scores] = stepForward(sequences[0][0], sequences[0][1], sizes, weights);
-  console.log(h);
+  console.log(h, scores);
   //sequences.forEach(seq => forwardPass(seq, sizes, weights))
 }
 

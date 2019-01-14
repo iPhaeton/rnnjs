@@ -40,8 +40,27 @@ async function readText(filename, eos) {
   return [inputs, vocabulary, charToIndex];
 };
 
-export const compose = (...funcs) => (...initialArgs) => {
-  return funcs.reduceRight((prevResult, f) => [f(...prevResult, ...initialArgs)], initialArgs)[0];
+const curry = (func) => {
+  return function(...args) {
+    let storedArgs = [];
+
+    function f (...args) {
+      storedArgs = storedArgs.concat(...args);
+      if (storedArgs.length < func.length) {
+        return f;
+      } else {
+        const res = func(...storedArgs);
+        //storedArgs = [];
+        return res;
+      }
+    }
+
+    return f(...args);
+  }
+};
+
+const compose = (...funcs) => (...initialArgs) => {
+  return funcs.reduceRight((prevResult, f) => [f(...prevResult)], initialArgs)[0];
 }
 
 module.exports = {
@@ -49,4 +68,5 @@ module.exports = {
   readFile,
   readText,
   compose,
+  curry,
 };
