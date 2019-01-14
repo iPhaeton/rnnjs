@@ -40,8 +40,13 @@ async function readText(filename, eos) {
   return [inputs, vocabulary, charToIndex];
 };
 
+export const compose = (...funcs) => (...initialArgs) => {
+  return funcs.reduceRight((prevResult, f) => [f(...prevResult, ...initialArgs)], initialArgs)[0];
+}
+
 module.exports = {
   promisify,
   readFile,
   readText,
+  compose,
 };
