@@ -28,9 +28,9 @@ function computeLoss(scores, yOneHot) {
   const sum = math.sum(exp);
   const probs = math.divide(exp, sum);
 
-  const loss = - compose(
+  const loss = -compose(
     math.sum,
-    dotMultiply(math.reshape(yOneHot, [scores.size()[0], 1])),
+    dotMultiply(math.reshape(math.clone(yOneHot), [scores.size()[0], 1])),
     math.log,
   )(probs);
 
@@ -45,7 +45,7 @@ function stepForward(charOneHot, yOneHot, [vocabSize, hiddenSize], [w, why, bh, 
     math.tanh,
     add(bh),
     math.multiply,
-  )(w, math.reshape(xh, [123, 1]));
+  )(w, math.reshape(math.clone(xh), [123, 1]));
 
   const scores = compose(
     add(by),
@@ -57,16 +57,26 @@ function stepForward(charOneHot, yOneHot, [vocabSize, hiddenSize], [w, why, bh, 
   return [h, loss];
 }
 
+function forwardPass(sequence, sizes, weights) {
+  const [h, loss] = sequence
+    .slice(0, -1)
+    .reduce((res, charOneHot, i) => {
+      const [h, loss] = stepForward(charOneHot, sequence[i+1], sizes, weights);
+      return [[...res[0], h], res[1] + loss];
+    }, [[], 0]);
+
+  return [h, loss / (sequence.length - 1)];
+}
+
 async function rnn(hiddenSize) {
   const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
   const sizes = [vocabulary.length, hiddenSize];
   const weights = initialize(sizes);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
-  const y = inputs.map(seq => seq.map(char => charToIndex[char]));
+  //const y = inputs.map(seq => seq.map(char => charToIndex[char]));
 
-  const [h, loss] = stepForward(sequences[0][0], sequences[0][1], sizes, weights);
-  console.log(h, loss);
-  //sequences.forEach(seq => forwardPass(seq, sizes, weights))
+  const [h, loss] = forwardPass(sequences[0], sizes, weights);
+  console.log(loss);
 }
 
 rnn(100);
