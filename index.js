@@ -4,11 +4,10 @@ const FILENAME = 'input.txt';
 const EOS = '\n';
 
 function initialize(vocabSize, hiddenSize) {
-  const wxh = math.multiply(math.ones(hiddenSize, vocabSize), math.random() * 0.01);
-  const whh = math.multiply(math.ones(hiddenSize, hiddenSize), math.random() * 0.01);
+  const w = math.multiply(math.ones(hiddenSize, vocabSize + hiddenSize), math.random() * 0.01);
   const why = math.multiply(math.ones(vocabSize, hiddenSize), math.random() * 0.01);
 
-  return [wxh, whh, why];
+  return [w, why];
 }
 
 function oneHotEncode(sequence, vocabSize, charToIndex) {
@@ -21,7 +20,7 @@ function oneHotEncode(sequence, vocabSize, charToIndex) {
 
 async function rnn(hiddenSize) {
   const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
-  const [wxh, whh, why] = initialize(vocabulary.length, hiddenSize);
+  const [w, why] = initialize(vocabulary.length, hiddenSize);
   const sequences = inputs.map(seq => oneHotEncode(seq, vocabulary.length, charToIndex));
 
   console.log(sequences[0][1])
