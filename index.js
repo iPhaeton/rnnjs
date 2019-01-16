@@ -9,6 +9,7 @@ const dotMultiply = curry(math.dotMultiply);
 function initialize([vocabSize, hiddenSize]) {
   const w = math.multiply(math.random([hiddenSize, vocabSize + hiddenSize]), 0.01);
   const why = math.multiply(math.random([vocabSize, hiddenSize]), 0.01);
+
   const bh = math.zeros(hiddenSize, 1);
   const by = math.zeros(vocabSize, 1);
 
@@ -30,7 +31,7 @@ function computeLoss(scores, yOneHot) {
 
   const loss = -compose(
     math.sum,
-    dotMultiply(math.clone(yOneHot).reshape([scores.size()[0], 1])),
+    dotMultiply(math.transpose(yOneHot)),
     math.log,
   )(probs);
 
@@ -38,13 +39,13 @@ function computeLoss(scores, yOneHot) {
 }
 
 function stepForward(charOneHot, hPrev, yOneHot, [vocabSize, hiddenSize], [w, why, bh, by]) {
-  const xh = math.concat(charOneHot, math.clone(hPrev).reshape([1, hiddenSize]));
+  const xh = math.concat(charOneHot, math.transpose(hPrev));
 
   const h = compose(
     math.tanh,
     add(bh),
     math.multiply,
-  )(w, math.clone(xh).reshape([123, 1]));
+  )(w, math.transpose(xh));
 
   const scores = compose(
     add(by),
@@ -72,20 +73,21 @@ function forwardPass(sequence, sizes, weights) {
   return [h, probs, loss];
 }
 
-function stepBackward(loss, probs, y) {
-  const dy = compose(
-    add(-1),
-    math.sum,
-    dotMultiply,
-  )(math.clone(probs).reshape([1, probs.size()[0]]), y);
+function stepBackward(loss, probs, y, h, dhNext, [w, why, bh, by]) {
+  const dy = math.subtract(probs, math.transpose(y));
 
-  //const dwhy =
-  //const dh =
+  const dwhy = math.multiply(dy, math.transpose(h));
+  const dby = math.clone(dy);
+
+  const dh = compose(
+    add(dhNext),
+    math.multiply,
+  )(math.transpose(why), dy);
 
   //const dw =
   //const dhPrev =
 
-  console.log(dy);
+  console.log(dh);
 }
 
 async function rnn(hiddenSize) {
@@ -96,7 +98,7 @@ async function rnn(hiddenSize) {
 
   const [h, probs, loss] = forwardPass(sequences[0], sizes, weights);
 
-  stepBackward(loss[12], probs[12], sequences[0][13])
+  stepBackward(loss[12], probs[12], sequences[0][13], h[13], math.zeros(hiddenSize, 1), weights)
 }
 
 rnn(100);
