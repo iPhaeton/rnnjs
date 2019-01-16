@@ -34,7 +34,7 @@ function computeLoss(scores, yOneHot) {
     math.log,
   )(probs);
 
-  return loss;
+  return [probs, loss];
 }
 
 function stepForward(charOneHot, hPrev, yOneHot, [vocabSize, hiddenSize], [w, why, bh, by]) {
@@ -51,21 +51,41 @@ function stepForward(charOneHot, hPrev, yOneHot, [vocabSize, hiddenSize], [w, wh
     math.multiply,
   )(why, h);
 
-  const loss = computeLoss(scores, yOneHot);
+  const [probs, loss] = computeLoss(scores, yOneHot);
 
-  return [h, loss];
+  return [h, probs, loss];
 }
 
 function forwardPass(sequence, sizes, weights) {
   const [vocabSize, hiddenSize] = sizes;
-  const [h, loss] = sequence
+  const [h, probs, loss] = sequence
     .slice(0, -1)
     .reduce((res, charOneHot, i) => {
-      const [h, loss] = stepForward(charOneHot, res[0][i], sequence[i + 1], sizes, weights);
-      return [[...res[0], h], res[1] + loss];
-    }, [[math.zeros(hiddenSize, 1)], 0]);
+      const [h, probs, loss] = stepForward(charOneHot, res[0][i], sequence[i + 1], sizes, weights);
+      return [
+        [...res[0], h],
+        [...res[1], probs],
+        [...res[2], loss],
+      ];
+    }, [[math.zeros(hiddenSize, 1)], [], []]);
 
-  return [h, loss / (sequence.length - 1)];
+  return [h, probs, loss];
+}
+
+function stepBackward(loss, probs, y) {
+  const dy = compose(
+    add(-1),
+    math.sum,
+    dotMultiply,
+  )(math.clone(probs).reshape([1, probs.size()[0]]), y);
+
+  //const dwhy =
+  //const dh =
+
+  //const dw =
+  //const dhPrev =
+
+  console.log(dy);
 }
 
 async function rnn(hiddenSize) {
@@ -73,10 +93,10 @@ async function rnn(hiddenSize) {
   const sizes = [vocabulary.length, hiddenSize];
   const weights = initialize(sizes);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
-  //const y = inputs.map(seq => seq.map(char => charToIndex[char]));
 
-  const [h, loss] = forwardPass(sequences[0], sizes, weights);
-  console.log(loss);
+  const [h, probs, loss] = forwardPass(sequences[0], sizes, weights);
+
+  stepBackward(loss[12], probs[12], sequences[0][13])
 }
 
 rnn(100);
