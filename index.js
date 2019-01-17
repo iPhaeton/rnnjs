@@ -4,6 +4,8 @@ const FILENAME = 'input.txt';
 const EOS = '\n';
 
 const add = curry(math.add);
+const subtract = curry(math.subtract);
+const multiply = curry(math.multiply);
 const dotMultiply = curry(math.dotMultiply);
 
 function initialize([vocabSize, hiddenSize]) {
@@ -73,7 +75,10 @@ function forwardPass(sequence, sizes, weights) {
   return [h, probs, loss];
 }
 
-function stepBackward(loss, probs, y, h, dhNext, [w, why, bh, by]) {
+function stepBackward(probs, x, y, hs, weights, sizes) {
+  const [w, why, bh, by] = weights;
+  const [vocabSize, hiddenSize] = sizes;
+  const [hPrev, h, dhNext] = hs;
   const dy = math.subtract(probs, math.transpose(y));
 
   const dwhy = math.multiply(dy, math.transpose(h));
@@ -84,10 +89,17 @@ function stepBackward(loss, probs, y, h, dhNext, [w, why, bh, by]) {
     math.multiply,
   )(math.transpose(why), dy);
 
-  //const dw =
-  //const dhPrev =
+  const dhRaw = compose(
+    dotMultiply(dh),
+    subtract(1),
+    math.square,
+  )(h);
 
-  console.log(dh);
+  const dw = math.multiply(dhRaw, math.concat(x, math.transpose(hPrev)));
+  const dbh = math.clone(dhRaw);
+
+  const dhPrev = math.multiply(math.transpose(w).slice(vocabSize, vocabSize + hiddenSize), dhRaw);
+  return [dhPrev, dw, dbh, dwhy, dby];
 }
 
 async function rnn(hiddenSize) {
@@ -98,7 +110,19 @@ async function rnn(hiddenSize) {
 
   const [h, probs, loss] = forwardPass(sequences[0], sizes, weights);
 
-  stepBackward(loss[12], probs[12], sequences[0][13], h[13], math.zeros(hiddenSize, 1), weights)
+  const [dhPrev, dw, dbh, dwhy, dby] = stepBackward(
+    probs[12],
+    sequences[0][12],
+    sequences[0][13],
+    [
+      h[12],
+      h[13],
+      math.zeros(hiddenSize, 1)
+    ],
+    weights,
+    sizes
+  );
+  console.log(dhPrev)
 }
 
 rnn(100);

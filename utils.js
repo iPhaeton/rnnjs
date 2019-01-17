@@ -45,7 +45,7 @@ const curry = (func) => {
     let storedArgs = [];
 
     function f (...args) {
-      storedArgs = storedArgs.concat(...args);
+      args.forEach(a => storedArgs.push(a))
       if (storedArgs.length < func.length) {
         return f;
       } else {
