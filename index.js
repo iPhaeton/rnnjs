@@ -75,10 +75,11 @@ function forwardPass(sequence, sizes, weights) {
   return [h, probs, loss];
 }
 
-function stepBackward(probs, x, y, hs, weights, sizes) {
+function stepBackward(probs, x, y, hs, sizes, weights) {
   const [w, why, bh, by] = weights;
   const [vocabSize, hiddenSize] = sizes;
   const [hPrev, h, dhNext] = hs;
+
   const dy = math.subtract(probs, math.transpose(y));
 
   const dwhy = math.multiply(dy, math.transpose(h));
@@ -102,6 +103,26 @@ function stepBackward(probs, x, y, hs, weights, sizes) {
   return [dhPrev, dw, dbh, dwhy, dby];
 }
 
+function backwardPass(probs, h, sequence, sizes, weights) {
+  const [vocabSize, hiddenSize] = sizes;
+
+  probs.reduceRight((res, prob, i) => {
+    const [dhPrev, dw, dbh, dwhy, dby] = stepBackward(
+      probs[i],
+      sequence[i],
+      sequence[i+1],
+      [
+        h[i],
+        h[i+1],
+        res[0],
+      ],
+      sizes,
+      weights,
+    );
+    return res;
+  }, [math.zeros(hiddenSize, 1)]);
+}
+
 async function rnn(hiddenSize) {
   const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
   const sizes = [vocabulary.length, hiddenSize];
@@ -109,20 +130,20 @@ async function rnn(hiddenSize) {
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
 
   const [h, probs, loss] = forwardPass(sequences[0], sizes, weights);
+  backwardPass(probs, h, sequences[0], sizes, weights)
 
-  const [dhPrev, dw, dbh, dwhy, dby] = stepBackward(
-    probs[12],
-    sequences[0][12],
-    sequences[0][13],
-    [
-      h[12],
-      h[13],
-      math.zeros(hiddenSize, 1)
-    ],
-    weights,
-    sizes
-  );
-  console.log(dhPrev)
+  // const [dhPrev, dw, dbh, dwhy, dby] = stepBackward(
+  //   probs[12],
+  //   sequences[0][12],
+  //   sequences[0][13],
+  //   [
+  //     h[12],
+  //     h[13],
+  //     math.zeros(hiddenSize, 1)
+  //   ],
+  //   sizes,
+  //   weights,
+  // );
 }
 
 rnn(100);
