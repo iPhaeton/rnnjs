@@ -172,11 +172,16 @@ function forwardAndBackward(config, sequence) {
   return updatedConfig;
 }
 
-async function rnn(hiddenSize, lr = 0.01) {
+async function getSequences(hiddenSize) {
   const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
   const sizes = [vocabulary.length, hiddenSize];
   const weights = initialize(sizes);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
+  return [sequences, sizes, weights];
+}
+
+async function rnn(hiddenSize, lr = 0.01) {
+  const [sequences, sizes, weights] = await getSequences(hiddenSize);
 
   const initialConfig = {
     probsHistory: [],
@@ -187,7 +192,6 @@ async function rnn(hiddenSize, lr = 0.01) {
   };
 
   const {lossHistory} = sequences.reduce(forwardAndBackward, initialConfig);
-  console.log(lossHistory)
 }
 
 rnn(100);
