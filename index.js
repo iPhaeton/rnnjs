@@ -8,11 +8,13 @@ const subtract = curry(math.subtract);
 const multiply = curry(math.multiply);
 const dotMultiply = curry(math.dotMultiply);
 
+const applyOnEveryStep = (f) => (...initialArgs) => (...args) => f(...initialArgs, ...args);
+
 function initialize([vocabSize, hiddenSize]) {
   const w = compose(
     multiply(0.01),
     math.random,
-  )([hiddenSize, vocabSize + hiddenSize])
+  )([hiddenSize, vocabSize + hiddenSize]);
 
   const why = compose(
     multiply(0.01),
@@ -27,6 +29,7 @@ function initialize([vocabSize, hiddenSize]) {
 
 function upgrade(weights, gradients, lr) {
   return mapZip(compose(
+    applyOnEveryStep(multiply)(lr),
     subtract,
   ), weights, gradients);
 }

@@ -45,12 +45,14 @@ const curry = (func) => {
     let storedArgs = [];
 
     function f (...args) {
-      args.forEach(a => storedArgs.push(a))
+      args.forEach(a => storedArgs.push(a));
       if (storedArgs.length < func.length) {
         return f;
-      } else {
+      } else if (storedArgs.length === func.length) {
         const res = func(...storedArgs);
         return res;
+      } else {
+        throw new Error('Curried function already called at:')
       }
     }
 
