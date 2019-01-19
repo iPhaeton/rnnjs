@@ -1,5 +1,5 @@
 const math = require('mathjs')
-const {readText, curry, compose} = require('./utils');
+const {readText, curry, compose, mapZip} = require('./utils');
 const FILENAME = 'input.txt';
 const EOS = '\n';
 
@@ -9,13 +9,26 @@ const multiply = curry(math.multiply);
 const dotMultiply = curry(math.dotMultiply);
 
 function initialize([vocabSize, hiddenSize]) {
-  const w = math.multiply(math.random([hiddenSize, vocabSize + hiddenSize]), 0.01);
-  const why = math.multiply(math.random([vocabSize, hiddenSize]), 0.01);
+  const w = compose(
+    multiply(0.01),
+    math.random,
+  )([hiddenSize, vocabSize + hiddenSize])
+
+  const why = compose(
+    multiply(0.01),
+    math.random,
+  )([vocabSize, hiddenSize]);
 
   const bh = math.zeros(hiddenSize, 1);
   const by = math.zeros(vocabSize, 1);
 
   return [w, why, bh, by];
+}
+
+function upgrade(weights, gradients, lr) {
+  return mapZip(compose(
+    subtract,
+  ), weights, gradients);
 }
 
 function oneHotEncode(sequence, vocabSize, charToIndex) {
@@ -106,7 +119,9 @@ function stepBackward(probs, x, y, hs, sizes, weights) {
 function backwardPass(probs, h, sequence, sizes, weights) {
   const [vocabSize, hiddenSize] = sizes;
 
-  probs.reduceRight((res, prob, i) => {
+  return probs.reduceRight((nextStep, prob, i) => {
+    const [dhNext, dwNext, dwhyNext, dbhNext, dbyNext] = nextStep;
+
     const [dhPrev, dw, dbh, dwhy, dby] = stepBackward(
       probs[i],
       sequence[i],
@@ -114,36 +129,33 @@ function backwardPass(probs, h, sequence, sizes, weights) {
       [
         h[i],
         h[i+1],
-        res[0],
+        dhNext,
       ],
       sizes,
       weights,
     );
-    return res;
-  }, [math.zeros(hiddenSize, 1)]);
+
+    return [
+      dhPrev,
+      add(dwNext, dw),
+      add(dwhyNext, dwhy),
+      add(dbhNext, dbh),
+      add(dbyNext, dby),
+    ];
+  }, [math.zeros(hiddenSize, 1), ...initialize(sizes)]);
 }
 
-async function rnn(hiddenSize) {
+async function rnn(hiddenSize, lr = 0.01) {
   const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
   const sizes = [vocabulary.length, hiddenSize];
   const weights = initialize(sizes);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
 
   const [h, probs, loss] = forwardPass(sequences[0], sizes, weights);
-  backwardPass(probs, h, sequences[0], sizes, weights)
+  const gradients = backwardPass(probs, h, sequences[0], sizes, weights);
 
-  // const [dhPrev, dw, dbh, dwhy, dby] = stepBackward(
-  //   probs[12],
-  //   sequences[0][12],
-  //   sequences[0][13],
-  //   [
-  //     h[12],
-  //     h[13],
-  //     math.zeros(hiddenSize, 1)
-  //   ],
-  //   sizes,
-  //   weights,
-  // );
+  const [w] = upgrade(weights, gradients.slice(1), lr);
+  console.log(w);
 }
 
 rnn(100);

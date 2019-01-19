@@ -50,7 +50,6 @@ const curry = (func) => {
         return f;
       } else {
         const res = func(...storedArgs);
-        //storedArgs = [];
         return res;
       }
     }
@@ -63,10 +62,17 @@ const compose = (...funcs) => (...initialArgs) => {
   return funcs.reduceRight((prevResult, f) => [f(...prevResult)], initialArgs)[0];
 }
 
+
+const mapZip = (f, ...arrs) => {
+  const iterator = arrs[0];
+  return iterator.map((_, index) => f(...arrs.map(arr => arr[index])))
+}
+
 module.exports = {
   promisify,
   readFile,
   readText,
   compose,
   curry,
+  mapZip,
 };
