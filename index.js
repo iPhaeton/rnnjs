@@ -27,8 +27,9 @@ function initialize([vocabSize, hiddenSize]) {
   return [w, why, bh, by];
 }
 
-function upgrade(weights, gradients, lr) {
+function update(weights, gradients, lr) {
   return mapZip(compose(
+    v => v.toArray(),
     applyOnEveryStep(multiply)(lr),
     subtract,
   ), weights, gradients);
@@ -148,17 +149,45 @@ function backwardPass(probs, h, sequence, sizes, weights) {
   }, [math.zeros(hiddenSize, 1), ...initialize(sizes)]);
 }
 
+function log({probsHistory, lossHistory, sizes, weights, lr}) {
+  console.log(lossHistory[lossHistory.length - 1])
+}
+
+function forwardAndBackward(config, sequence) {
+  const {probsHistory, lossHistory, sizes, weights, lr} = config;
+
+  const [h, probs, loss] = forwardPass(sequence, sizes, weights);
+  const gradients = backwardPass(probs, h, sequence, sizes, weights);
+  const meanLoss = math.add(...loss) / (sequence.length - 1);
+
+  const updatedConfig = {
+    ...config,
+    probsHistory: [...probsHistory, probs],
+    lossHistory: [...lossHistory, meanLoss],
+    weights: update(weights, gradients.slice(1), lr),
+  };
+
+  log(updatedConfig);
+
+  return updatedConfig;
+}
+
 async function rnn(hiddenSize, lr = 0.01) {
   const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
   const sizes = [vocabulary.length, hiddenSize];
   const weights = initialize(sizes);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
 
-  const [h, probs, loss] = forwardPass(sequences[0], sizes, weights);
-  const gradients = backwardPass(probs, h, sequences[0], sizes, weights);
+  const initialConfig = {
+    probsHistory: [],
+    lossHistory: [],
+    sizes,
+    weights,
+    lr
+  };
 
-  const [w] = upgrade(weights, gradients.slice(1), lr);
-  console.log(w);
+  const {lossHistory} = sequences.reduce(forwardAndBackward, initialConfig);
+  console.log(lossHistory)
 }
 
 rnn(100);
