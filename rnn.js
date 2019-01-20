@@ -1,4 +1,4 @@
-const math = require('mathjs')
+const math = require('mathjs');
 const {readText, curry, compose, mapZip} = require('./utils');
 const FILENAME = 'input.txt';
 const EOS = '\n';

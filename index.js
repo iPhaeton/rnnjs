@@ -1,4 +1,4 @@
 const {rnn} = require('./rnn');
-const {gradCheck} = require('./check');
+const {gradientCheck} = require('./check');
 
-gradCheck(100);
+gradientCheck(100);
