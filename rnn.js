@@ -27,8 +27,8 @@ function initialize([vocabSize, hiddenSize], mode = ['random', 'zeros']) {
     math[modeW],
   )([vocabSize, hiddenSize]);
 
-  const bh = math[modeB](hiddenSize, 1);
-  const by = math[modeB](vocabSize, 1);
+  const bh = math[modeB]([hiddenSize, 1]);
+  const by = math[modeB]([vocabSize, 1]);
 
   return [w, why, bh, by];
 }
