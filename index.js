@@ -10,19 +10,25 @@ const dotMultiply = curry(math.dotMultiply);
 
 const applyOnEveryStep = (f) => (...initialArgs) => (...args) => f(...initialArgs, ...args);
 
-function initialize([vocabSize, hiddenSize]) {
+function initialize([vocabSize, hiddenSize], mode = ['random', 'zeros']) {
+  if (!mode || mode.length !== 2) {
+    throw new Error('[initialize] There should be mode for weights and for biases');
+  }
+  
+  const [modeW, modeB] = mode;
+
   const w = compose(
     multiply(0.01),
-    math.random,
+    math[modeW],
   )([hiddenSize, vocabSize + hiddenSize]);
 
   const why = compose(
     multiply(0.01),
-    math.random,
+    math[modeW],
   )([vocabSize, hiddenSize]);
 
-  const bh = math.zeros(hiddenSize, 1);
-  const by = math.zeros(vocabSize, 1);
+  const bh = math[modeB](hiddenSize, 1);
+  const by = math[modeB](vocabSize, 1);
 
   return [w, why, bh, by];
 }
@@ -146,7 +152,7 @@ function backwardPass(probs, h, sequence, sizes, weights) {
       add(dbhNext, dbh),
       add(dbyNext, dby),
     ];
-  }, [math.zeros(hiddenSize, 1), ...initialize(sizes)]);
+  }, [math.zeros(hiddenSize, 1), ...initialize(sizes, ['zeros', 'zeros'])]);
 }
 
 function log({probsHistory, lossHistory, sizes, weights, lr}) {
@@ -175,7 +181,7 @@ function forwardAndBackward(config, sequence) {
 async function getSequences(hiddenSize) {
   const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
   const sizes = [vocabulary.length, hiddenSize];
-  const weights = initialize(sizes);
+  const weights = initialize(sizes, ['random', 'zeros']);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
   return [sequences, sizes, weights];
 }
