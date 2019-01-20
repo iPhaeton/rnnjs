@@ -1,12 +1,8 @@
 const math = require('mathjs');
-const {readText, curry, compose, mapZip} = require('./utils');
+const {readText, compose, mapZip} = require('./utils');
 const FILENAME = 'input.txt';
 const EOS = '\n';
-
-const add = curry(math.add);
-const subtract = curry(math.subtract);
-const multiply = curry(math.multiply);
-const dotMultiply = curry(math.dotMultiply);
+const {add, subtract, multiply, dotMultiply} = require('./math');
 
 const applyOnEveryStep = (f) => (...initialArgs) => (...args) => f(...initialArgs, ...args);
 
@@ -205,4 +201,5 @@ module.exports = {
   getSequences,
   forwardPass,
   backwardPass,
+  initialize,
 }
