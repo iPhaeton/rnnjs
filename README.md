@@ -1,0 +1,1 @@
+Naive implementation of a Recurrent Neural Network in JavaScript.
