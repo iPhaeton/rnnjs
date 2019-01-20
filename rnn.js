@@ -178,8 +178,8 @@ function forwardAndBackward(config, sequence) {
   return updatedConfig;
 }
 
-async function getSequences(hiddenSize) {
-  const [inputs, vocabulary, charToIndex] = await readText(FILENAME, EOS);
+async function getSequences(hiddenSize, filename) {
+  const [inputs, vocabulary, charToIndex] = await readText(filename, EOS);
   const sizes = [vocabulary.length, hiddenSize];
   const weights = initialize(sizes, ['random', 'zeros']);
   const sequences = inputs.map(seq => oneHotEncode(seq, sizes[0], charToIndex));
@@ -187,7 +187,7 @@ async function getSequences(hiddenSize) {
 }
 
 async function rnn(hiddenSize, lr = 0.01) {
-  const [sequences, sizes, weights] = await getSequences(hiddenSize);
+  const [sequences, sizes, weights] = await getSequences(hiddenSize, FILENAME);
 
   const initialConfig = {
     probsHistory: [],

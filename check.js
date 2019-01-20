@@ -1,5 +1,6 @@
 const math = require('mathjs');
 const {getSequences, forwardPass, backwardPass} = require('./rnn');
+const TEST_FILENAME = 'test.txt';
 
 function computeFunction(sequence, sizes, weights) {
   const [_, __, loss] = forwardPass(sequence, sizes, weights);
@@ -18,8 +19,7 @@ function computeGradient(sequence, sizes, weights, [k,i,j], h) {
 }
 
 async function gradientCheck(hiddenSize) {
-  const [[sequence], sizes, weights] = await getSequences(hiddenSize);
-  const testSequence = sequence.slice(0,2);
+  const [[sequence], sizes, weights] = await getSequences(hiddenSize, TEST_FILENAME);
   const [w, why, bh, by] = weights;
   const [h, probs, loss] = forwardPass(sequence, sizes, weights);
   const [_, dwa, dwhya, dbha, dbya] = backwardPass(probs, h, sequence, sizes, weights);
