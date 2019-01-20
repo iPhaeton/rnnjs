@@ -3,7 +3,7 @@ const {getSequences, forwardPass, backwardPass} = require('./rnn');
 
 function computeFunction(sequence, sizes, weights) {
   const [_, __, loss] = forwardPass(sequence, sizes, weights);
-  const f = math.add(...loss, 0) / (sequence.length - 1);
+  const f = math.add(...loss, 0);
   return f;
 }
 
@@ -24,7 +24,8 @@ async function gradientCheck(hiddenSize) {
   const [h, probs, loss] = forwardPass(sequence, sizes, weights);
   const [_, dwa, dwhya, dbha, dbya] = backwardPass(probs, h, sequence, sizes, weights);
 
-  console.log(dwa.toArray()[0][0], computeGradient(testSequence, sizes, weights, [0,0,0], 1e-5));
+  console.log(dwa.toArray()[0][0], computeGradient(sequence, sizes, weights, [0,0,0], 1e-5));
+  console.log(dwa.toArray()[0][1], computeGradient(sequence, sizes, weights, [0,0,1], 1e-5));
 
   // for (let k = 0; k < weights.length; k++) {
   //   const m = weights[k];

@@ -64,6 +64,10 @@ const compose = (...funcs) => (...initialArgs) => {
   return funcs.reduceRight((prevResult, f) => [f(...prevResult)], initialArgs)[0];
 }
 
+const identity = cb => v => {
+  cb(v)
+  return v;
+}
 
 const mapZip = (f, ...arrs) => {
   const iterator = arrs[0];
@@ -75,6 +79,7 @@ module.exports = {
   readFile,
   readText,
   compose,
+  identity,
   curry,
   mapZip,
 };
