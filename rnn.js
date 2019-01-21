@@ -59,7 +59,7 @@ function computeLoss(scores, yOneHot) {
   return [probs, loss];
 }
 
-function stepForward(charOneHot, hPrev, yOneHot, [vocabSize, hiddenSize], [w, why, bh, by]) {
+function stepForward(charOneHot, hPrev, yOneHot, [w, why, bh, by]) {
   const xh = math.concat(charOneHot, math.transpose(hPrev));
 
   const h = compose(
@@ -83,7 +83,7 @@ function forwardPass(sequence, sizes, weights) {
   const [h, probs, loss] = sequence
     .slice(0, -1)
     .reduce((res, charOneHot, i) => {
-      const [h, probs, loss] = stepForward(charOneHot, res[0][i], sequence[i + 1], sizes, weights);
+      const [h, probs, loss] = stepForward(charOneHot, res[0][i], sequence[i + 1], weights);
       return [
         [...res[0], h],
         [...res[1], probs],
